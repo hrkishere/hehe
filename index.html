@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy Birthday!</title>
+    <!-- Use Tailwind CSS for easy styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load the Tone.js library for audio synthesis -->
+    <script src="https://unpkg.com/tone@14.7.58/build/Tone.js"></script>
+    <!-- Load Phosphor Icons for game UI -->
+    <script src="https://unpkg.com/@phosphor-icons/web@2.1.1"></script>
+    <!-- Load Three.js library for 3D graphics -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #e0e0e0; /* Light color for text */
+            background-color: #0b0c1e; /* Dark background for night sky effect */
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Sparkle effect for the background */
+        .sparkle-star {
+            position: absolute;
+            background-color: #ffffff;
+            opacity: 0;
+            border-radius: 50%;
+            animation: twinkle 5s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        /* Custom scrollbar styling for a cleaner look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1b32;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #f67280;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #c06c84;
+        }
+
+        /* Custom CSS for the 3D photo effect on hover */
+        .photo-card {
+            transform-style: preserve-3d;
+            transition: transform 0.5s ease-in-out;
+            transform: rotateX(0) rotateY(0);
+        }
+        .photo-card:hover {
+            transform: rotateX(5deg) rotateY(5deg) translateZ(20px);
+        }
+        .photo-img {
+            transition: transform 0.5s ease-in-out;
+        }
+        .photo-card:hover .photo-img {
+            transform: scale(1.05);
+        }
+
+        /* Custom CSS for the typing animation effect */
+        .typing-container {
+            display: inline-block;
+            white-space: pre-wrap;
+            overflow: hidden;
+            border-right: 2px solid;
+            animation: blink-caret .75s step-end infinite;
+        }
+        
+        /* The typewriter cursor animation */
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #f67280; }
+        }
+
+        /* Game specific styles */
+        #gameCanvas {
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+            touch-action: none; /* Disable default touch actions */
+        }
+
+        .game-controls {
+            display: none; /* Hide on larger screens */
+        }
+        @media (max-width: 640px) {
+            .game-controls {
+                display: flex;
+            }
+        }
+        
+        /* Confetti animation */
+        .confetti {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #f67280;
+            opacity: 0;
+            animation: confetti-fall 2s forwards;
+        }
+        @keyframes confetti-fall {
+            from { transform: translateY(0) rotate(0); opacity: 1; }
+            to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Modal for game win */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #2a2a44;
+            color: #fff;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 90%;
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        #rotating-cake-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+        }
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-purple-100 to-indigo-100 min-h-screen p-4 sm:p-8">
+
+    <!-- Starry Night Background Effect -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const body = document.body;
+            for (let i = 0; i < 50; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.classList.add('sparkle-star');
+                sparkle.style.width = `${Math.random() * 3 + 1}px`;
+                sparkle.style.height = sparkle.style.width;
+                sparkle.style.left = `${Math.random() * 100}%`;
+                sparkle.style.top = `${Math.random() * 100}%`;
+                sparkle.style.animationDelay = `${Math.random() * 5}s`;
+                body.appendChild(sparkle);
+            }
+        });
+    </script>
+    
+    <!-- Main Container -->
+    <div class="max-w-6xl mx-auto space-y-8 relative z-10">
+        <!-- Main Heading -->
+        <header class="text-center py-8">
+            <h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-pink-400 drop-shadow-md animate-pulse">
+                Happy Birthday!
+            </h1>
+            <p class="mt-2 text-lg text-purple-300">A little something just for you.</p>
+        </header>
+
+        <!-- 1. Wishing Bar -->
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 transform transition-transform duration-300 hover:scale-[1.01] border border-fuchsia-500">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-purple-300">Your Birthday Wish</h2>
+            <div id="typingMessage" class="typing-container text-lg sm:text-xl leading-relaxed text-gray-300"></div>
+        </div>
+
+        <!-- 2. Photos Bar -->
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 transform transition-transform duration-300 hover:scale-[1.01] border border-fuchsia-500">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-purple-300">BIRTHDAY KI SHUBHKAMNAAY</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Photo Card 1 -->
+                <div class="photo-card bg-gray-900 rounded-lg p-4 shadow-md transition-shadow hover:shadow-xl">
+                    <img src="https://i.pinimg.com/originals/d3/9e/1e/d39e1ef8352502a4b11ba102dc10b876.gif" alt="Friend 1" class="photo-img w-full h-auto rounded-lg shadow-sm">
+                    <p class="mt-3 text-center text-sm text-gray-400">Making memories!</p>
+                </div>
+                <!-- Photo Card 2 -->
+                <div class="photo-card bg-gray-900 rounded-lg p-4 shadow-md transition-shadow hover:shadow-xl">
+                    <img src="https://media.tenor.com/OEjqB_zl7iIAAAAM/voldemort-laughing.gif" alt="Friend 2" class="photo-img w-full h-auto rounded-lg shadow-sm">
+                    <p class="mt-3 text-center text-sm text-gray-400">Throwback to that day.</p>
+                </div>
+                <!-- Photo Card 3 -->
+                <div class="photo-card bg-gray-900 rounded-lg p-4 shadow-md transition-shadow hover:shadow-xl">
+                    <img src="https://esbirthday.com/img/g/nandini/happy-birthday-gif-funny-nandini.gif" alt="Friend 3" class="photo-img w-full h-auto rounded-lg shadow-sm">
+                    <p class="mt-3 text-center text-sm text-gray-400">Just because!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Song Bar -->
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 transform transition-transform duration-300 hover:scale-[1.01] flex flex-col items-center border border-fuchsia-500">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-purple-300">A Little Song For You</h2>
+            <button id="playSongButton" class="group bg-fuchsia-500 hover:bg-fuchsia-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
+                <div class="flex items-center space-x-2">
+                    <i class="ph ph-play group-[.playing]:hidden"></i>
+                    <i class="ph ph-stop hidden group-[.playing]:block"></i>
+                    <span class="group-[.playing]:hidden">Play Happy Birthday</span>
+                    <span class="hidden group-[.playing]:block">Stop Song</span>
+                </div>
+            </button>
+            <p id="songStatus" class="mt-4 text-sm text-gray-500 italic">Music: Happy Birthday melody synthesized with Tone.js.</p>
+        </div>
+
+        <!-- 4. 3D Model -->
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 transform transition-transform duration-300 hover:scale-[1.01] flex flex-col items-center border border-fuchsia-500">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-purple-300">A Rotating Surprise</h2>
+            <div id="rotating-cake-container"></div>
+            <p class="mt-4 text-sm text-gray-500 italic">An animated 3D birthday cake made with Three.js</p>
+        </div>
+
+        <!-- 5. More Surprise (Game) -->
+        <div class="bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 transform transition-transform duration-300 hover:scale-[1.01] border border-fuchsia-500">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-4 text-purple-300">A Little Game...</h2>
+            <p class="text-center text-gray-400 mb-4">Catch the falling cakes! Score 10 to unlock a special gift.</p>
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <canvas id="gameCanvas" class="w-full max-w-sm hidden"></canvas>
+                <div id="gameStartContainer" class="flex flex-col items-center">
+                    <button id="startGameButton" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105 animate-pulse">
+                        <div class="flex items-center space-x-2">
+                            <i class="ph ph-game-controller-bold text-xl"></i>
+                            <span>Play Game</span>
+                        </div>
+                    </button>
+                </div>
+                <div id="gameInfo" class="hidden flex items-center justify-between w-full max-w-sm px-2">
+                    <p class="text-lg font-bold text-gray-300">Score: <span id="scoreDisplay">0</span></p>
+                    <p class="text-lg font-bold text-gray-300">High Score: <span id="highScoreDisplay">0</span></p>
+                </div>
+                <div class="game-controls hidden space-x-4 mt-4 w-full justify-center max-w-sm">
+                    <button id="leftButton" class="bg-indigo-500 text-white p-4 rounded-full shadow-lg transition-transform active:scale-90">
+                        <i class="ph ph-caret-left-bold text-xl"></i>
+                    </button>
+                    <button id="rightButton" class="bg-indigo-500 text-white p-4 rounded-full shadow-lg transition-transform active:scale-90">
+                        <i class="ph ph-caret-right-bold text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Win Modal -->
+        <div id="winModal" class="modal">
+            <div class="modal-content">
+                <h3 class="text-3xl font-bold text-green-400 mb-4">You Won!</h3>
+                <p class="text-lg text-gray-300 mb-6">You've caught all the cakes! As a reward, here are a few novels to bring you peace and happiness. Enjoy!</p>
+                <div class="flex flex-col space-y-4">
+                    <a href="https://www.gutenberg.org/ebooks/1614.html.images" target="_blank" class="reward-link inline-block bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform hover:scale-105">
+                        "The Art of Living" by Epictetus
+                    </a>
+                    <a href="https://www.gutenberg.org/ebooks/71590" target="_blank" class="reward-link inline-block bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform hover:scale-105">
+                        "The Secret Garden" by Frances Hodgson Burnett
+                    </a>
+                    <a href="https://www.gutenberg.org/ebooks/6226" target="_blank" class="reward-link inline-block bg-teal-500 hover:bg-teal-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-transform hover:scale-105">
+                        "The Wonderful Wizard of Oz" by L. Frank Baum
+                    </a>
+                </div>
+                <button id="playAgainButton" class="mt-6 bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-6 rounded-full shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105">
+                    Play Again
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        window.onload = function() {
+            // --- 1. Typing Animation for the Wishing Bar ---
+            const message = "My Dearest Friend,\n\nHappy, happy birthday! I wanted to create something special for you to celebrate this day. I hope this little website brings a smile to your face and reminds you of how much you are loved. Thank you for being such an incredible friend and for all the amazing moments we've shared. I wish you nothing but joy, success, and endless happiness in the year ahead. May this new chapter be filled with wonderful adventures and beautiful memories. You deserve all the best things in the world. Have a fantastic day!\n\nWith all my love,\n[Your Name]";
+            const typingElement = document.getElementById('typingMessage');
+            let i = 0;
+            const typingSpeed = 50; // milliseconds
+
+            function typeWriter() {
+                if (i < message.length) {
+                    // Check for a newline character and add it as a line break
+                    if (message.charAt(i) === '\n') {
+                        typingElement.innerHTML += '<br>';
+                    } else {
+                        typingElement.textContent += message.charAt(i);
+                    }
+                    i++;
+                    setTimeout(typeWriter, typingSpeed);
+                } else {
+                    // Stop the blinking cursor after the message is complete
+                    typingElement.style.borderRight = 'none';
+                }
+            }
+            typeWriter();
+
+            // --- 2. 3D Photos (Handled by CSS) ---
+
+            // --- 3. Song Player (Tone.js) ---
+            const playSongButton = document.getElementById('playSongButton');
+            const synth = new Tone.Synth().toDestination();
+            let isPlaying = false;
+            let sequence = null;
+
+            const happyBirthdayNotes = [
+                'C4', 'C4', 'D4', 'C4', 'F4', 'E4',
+                'C4', 'C4', 'D4', 'C4', 'G4', 'F4',
+                'C4', 'C4', 'C5', 'A4', 'F4', 'E4', 'D4',
+                'Bb4', 'Bb4', 'A4', 'F4', 'G4', 'F4'
+            ];
+            
+            // Function to toggle the song playback
+            function toggleSong() {
+                if (Tone.Transport.state !== 'started') {
+                    // Start the transport when the button is clicked for the first time
+                    Tone.Transport.start();
+                }
+
+                if (isPlaying) {
+                    // Stop the sequence and the transport
+                    if (sequence) {
+                        sequence.stop();
+                    }
+                    Tone.Transport.stop();
+                    isPlaying = false;
+                    playSongButton.classList.remove('playing');
+                } else {
+                    // Create a new sequence and start it
+                    sequence = new Tone.Sequence((time, note) => {
+                        synth.triggerAttackRelease(note, '4n', time);
+                    }, happyBirthdayNotes, '4n').start(0);
+
+                    // Set a loop to restart the melody
+                    Tone.Transport.loop = true;
+                    Tone.Transport.loopEnd = '4m';
+                    
+                    isPlaying = true;
+                    playSongButton.classList.add('playing');
+                }
+            }
+            
+            playSongButton.addEventListener('click', () => {
+                toggleSong();
+            });
+
+            // --- 4. 3D Birthday Cake (Three.js) ---
+            const cakeContainer = document.getElementById('rotating-cake-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, cakeContainer.clientWidth / cakeContainer.clientHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+
+            renderer.setSize(cakeContainer.clientWidth, cakeContainer.clientHeight);
+            renderer.setClearColor(0x000000, 0); // Transparent background
+            cakeContainer.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(2, 2, 5);
+            scene.add(directionalLight);
+
+            // Cake geometry and materials
+            const cakeGeometry = new THREE.CylinderGeometry(1.5, 2, 1, 32);
+            const frostingGeometry = new THREE.CylinderGeometry(1.5, 2.1, 0.2, 32);
+            const candleGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.1);
+            
+            const cakeMaterial = new THREE.MeshPhongMaterial({ color: 0xffa07a });
+            const frostingMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            const candleMaterial = new THREE.MeshPhongMaterial({ color: 0x8b0000 });
+            
+            const cake = new THREE.Mesh(cakeGeometry, cakeMaterial);
+            const frosting = new THREE.Mesh(frostingGeometry, frostingMaterial);
+            const candle = new THREE.Mesh(candleGeometry, candleMaterial);
+
+            // Positioning the parts of the cake
+            frosting.position.y = 0.6;
+            cake.position.y = 0;
+            candle.position.y = 1.0;
+            
+            // Grouping the cake parts
+            const birthdayCake = new THREE.Group();
+            birthdayCake.add(cake);
+            birthdayCake.add(frosting);
+            birthdayCake.add(candle);
+            scene.add(birthdayCake);
+
+            camera.position.z = 4;
+            camera.position.y = 1.5;
+
+            // Animation loop for 3D model
+            function animateCake() {
+                requestAnimationFrame(animateCake);
+                birthdayCake.rotation.y += 0.005;
+                renderer.render(scene, camera);
+            }
+            animateCake();
+
+            // Handle window resizing for 3D canvas
+            window.addEventListener('resize', () => {
+                camera.aspect = cakeContainer.clientWidth / cakeContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(cakeContainer.clientWidth, cakeContainer.clientHeight);
+            });
+
+            // --- 5. Birthday Game ---
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreDisplay = document.getElementById('scoreDisplay');
+            const highScoreDisplay = document.getElementById('highScoreDisplay');
+            const winModal = document.getElementById('winModal');
+            const startGameButton = document.getElementById('startGameButton');
+            const playAgainButton = document.getElementById('playAgainButton');
+            const gameStartContainer = document.getElementById('gameStartContainer');
+            const gameInfo = document.getElementById('gameInfo');
+            const leftButton = document.getElementById('leftButton');
+            const rightButton = document.getElementById('rightButton');
+
+            // Game variables
+            let player;
+            let cakes = [];
+            let score = 0;
+            let highScore = localStorage.getItem('birthdayGameHighScore') || 0;
+            let gameRunning = false;
+            let cakeFallSpeed = 2;
+
+            // Set canvas size and game element dimensions responsively
+            function setCanvasSize() {
+                const parentWidth = canvas.parentElement.clientWidth;
+                const newWidth = Math.min(parentWidth, 300);
+                const newHeight = newWidth * 1.5;
+                
+                // Set the canvas element's drawing buffer size
+                canvas.width = newWidth;
+                canvas.height = newHeight;
+                
+                // Update player dimensions and position based on new canvas size
+                player = {
+                    x: canvas.width / 2,
+                    y: canvas.height - canvas.height * 0.1, // 10% from bottom
+                    width: canvas.width * 0.15, // 15% of canvas width
+                    height: canvas.width * 0.08, // 8% of canvas width
+                    speed: canvas.width * 0.03
+                };
+
+                // Clear and redraw the canvas to adjust to new dimensions
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (gameRunning) {
+                    gameLoop();
+                } else {
+                    drawPlayer();
+                }
+            }
+            
+            // Initial setup and event listeners for resizing
+            setCanvasSize();
+            window.addEventListener('resize', setCanvasSize);
+            
+            // Update high score display
+            highScoreDisplay.textContent = highScore;
+
+            // Function to reset the game
+            function resetGame() {
+                score = 0;
+                cakes = [];
+                scoreDisplay.textContent = score;
+                player.x = canvas.width / 2;
+                player.y = canvas.height - canvas.height * 0.1;
+                cakeFallSpeed = 2; // Reset speed
+            }
+            
+            // Function to create and animate confetti
+            function createConfetti() {
+                const colors = ['#f67280', '#c06c84', '#6c5b7b', '#355c7d', '#f67280'];
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.classList.add('confetti');
+                    confetti.style.left = `${Math.random() * window.innerWidth}px`;
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = `${Math.random() * 0.5}s`;
+                    confetti.style.animationDuration = `${Math.random() * 1.5 + 1}s`;
+                    document.body.appendChild(confetti);
+                }
+            }
+
+            // Function to draw player
+            function drawPlayer() {
+                // Draw a simple basket shape
+                ctx.fillStyle = '#c06c84';
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.width / 2, Math.PI, 0, false);
+                ctx.lineTo(player.x + player.width / 2, player.y + player.height / 2);
+                ctx.lineTo(player.x - player.width / 2, player.y + player.height / 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            // Function to draw cake
+            function drawCake(cake) {
+                // Cake bottom layer
+                ctx.fillStyle = '#ffc0cb';
+                ctx.beginPath();
+                ctx.rect(cake.x - (cake.width / 2), cake.y, cake.width, cake.height / 2);
+                ctx.fill();
+
+                // Cake top layer (frosting)
+                ctx.fillStyle = '#8e44ad';
+                ctx.beginPath();
+                ctx.ellipse(cake.x, cake.y, cake.width / 2, cake.height / 4, 0, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Game loop
+            function gameLoop() {
+                if (!gameRunning) return;
+
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Spawn new cakes
+                if (Math.random() < 0.02) {
+                    cakes.push({
+                        x: Math.random() * (canvas.width - 20) + 10,
+                        y: -20,
+                        width: canvas.width * 0.08, // 8% of canvas width
+                        height: canvas.height * 0.05, // 5% of canvas height
+                        speed: cakeFallSpeed
+                    });
+                }
+
+                // Update and draw cakes
+                cakes = cakes.filter(cake => {
+                    cake.y += cake.speed;
+                    drawCake(cake);
+
+                    // Collision detection: Check if the cake is inside the player's catcher
+                    if (
+                        cake.x > player.x - player.width / 2 &&
+                        cake.x < player.x + player.width / 2 &&
+                        cake.y > player.y - player.height / 2 &&
+                        cake.y < player.y + player.height / 2
+                    ) {
+                        score++;
+                        scoreDisplay.textContent = score;
+                        cakeFallSpeed += 0.1; // Increase speed slightly with each catch
+
+                        if (score >= 10) {
+                            gameRunning = false;
+                            showWinModal();
+                            createConfetti();
+                            if (score > highScore) {
+                                highScore = score;
+                                localStorage.setItem('birthdayGameHighScore', highScore);
+                                highScoreDisplay.textContent = highScore;
+                            }
+                        }
+                        return false; // Remove the caught cake
+                    }
+
+                    return cake.y < canvas.height; // Keep cakes that are on screen
+                });
+
+                // Draw player
+                drawPlayer();
+
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                if (!gameRunning) return;
+                if (e.key === 'ArrowLeft' && player.x > player.width / 2) {
+                    player.x -= player.speed;
+                } else if (e.key === 'ArrowRight' && player.x < canvas.width - player.width / 2) {
+                    player.x += player.speed;
+                }
+            });
+
+            // Mobile/touch controls
+            leftButton.addEventListener('touchstart', (e) => {
+                e.preventDefault(); // Prevent default touch behavior like scrolling
+                if (!gameRunning) return;
+                player.x -= player.speed * 2;
+            });
+            rightButton.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (!gameRunning) return;
+                player.x += player.speed * 2;
+            });
+            leftButton.addEventListener('mousedown', () => {
+                if (!gameRunning) return;
+                player.x -= player.speed * 2;
+            });
+            rightButton.addEventListener('mousedown', () => {
+                if (!gameRunning) return;
+                player.x += player.speed * 2;
+            });
+            
+            // Function to start the game
+            startGameButton.addEventListener('click', () => {
+                gameRunning = true;
+                resetGame();
+                gameStartContainer.classList.add('hidden');
+                canvas.classList.remove('hidden');
+                gameInfo.classList.remove('hidden');
+                const gameControls = document.querySelector('.game-controls');
+                if (window.innerWidth <= 640) {
+                    gameControls.classList.remove('hidden');
+                }
+                gameLoop();
+            });
+
+            // "Play Again" button listener
+            playAgainButton.addEventListener('click', () => {
+                winModal.style.display = 'none';
+                gameRunning = true;
+                resetGame();
+                gameLoop();
+            });
+
+            // Function to show the modal
+            function showWinModal() {
+                winModal.style.display = 'flex';
+                // Stop the song if it's playing
+                if (isPlaying) {
+                    toggleSong();
+                }
+            }
+        };
+    </script>
+</body>
+</html>
